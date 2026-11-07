@@ -11,6 +11,7 @@ import type { Layout } from "@/lib/slides";
 type Mark = { icon: LucideIcon; route: string; color: string; tint: string; entrance: "rise" | "split" | "lift" | "unfold" | "settle" };
 
 const marks: Record<Layout, Mark> = {
+  question: { icon: Users, route: "M12 43 L32 22 L52 44 L76 26 L98 49 L124 20", color: "#70518b", tint: "#eee5f5", entrance: "lift" },
   cover: { icon: Compass, route: "M12 56 L34 45 L56 51 L76 23 L95 34 L124 13", color: "#57771e", tint: "#e9f6be", entrance: "lift" },
   problem: { icon: GitFork, route: "M12 55 L39 54 L60 35 L82 35 L102 15 L124 17", color: "#8a4b24", tint: "#f9e7c9", entrance: "split" },
   solution: { icon: Building2, route: "M12 57 L30 57 L49 33 L71 43 L97 24 L124 24", color: "#317361", tint: "#dcefe3", entrance: "unfold" },

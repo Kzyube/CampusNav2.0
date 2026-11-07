@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { ArrowLeft, Clock3, ExternalLink } from "lucide-react";
 import { Brand } from "../brand";
+import { questionSets } from "@/lib/questions";
 import { tagalogNotes } from "@/lib/tagalog-notes";
 import { duration, presenters, slideNumber, slides } from "@/lib/slides";
 
@@ -21,7 +22,16 @@ export function SpeakerNotes({ index }: { index: number }) {
   const slide = slides[index];
   const speaker = presenters[slide.presenter];
   const language = useSyncExternalStore(subscribe, getLanguage, () => "en");
-  const [about, cue, opening, explanation, handoff] = tagalogNotes[index];
+  const questionSet = questionSets[slide.presenter];
+  const [about, cue, opening, explanation, handoff] = slide.layout === "question"
+    ? [
+      `Balikan ang ${speaker.section} gamit ang dalawang tanong.`,
+      "Pindutin ang Select Group at pagkatapos ay Select Student. Basahin ang unang tanong. Puwede ulitin ang pagpili para sa ikalawang tanong.",
+      `“Balikan natin ang ating tinalakay. Pipili muna ako ng grupo, pagkatapos ay isang estudyante.”`,
+      `Itanong: “${questionSet.tagalogQuestions[0]}” Hintayin ang sagot. Gabay sa sagot: ${questionSet.tagalogAnswers[0]} Pagkatapos, itanong: “${questionSet.tagalogQuestions[1]}” Gabay sa sagot: ${questionSet.tagalogAnswers[1]}`,
+      slide.presenter < presenters.length - 1 ? `“Salamat sa pagsagot. Ituloy naman natin kay ${presenters[slide.presenter + 1].name}.”` : "“Salamat sa inyong pakikilahok.”",
+    ]
+    : tagalogNotes[slide.sourceIndex!];
   const entries = language === "tl"
     ? [["Tungkol saan ang slide na ito?", about], ["Gawin sa screen", cue], ["Sabihin muna", opening], ["Ipaliwanag", explanation], ["Panglipat sa susunod", handoff]]
     : [["What is this slide about?", slide.guide], ["Do on screen", slide.cue], ...slide.notes.map((text, i) => [noteLabels[i], text])];

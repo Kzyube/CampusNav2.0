@@ -11,6 +11,7 @@ import { playDeckSound } from "./deck-sound";
 import { PhoneWalkthrough } from "./phone-walkthrough";
 import { TeamFinale } from "./team-finale";
 import { TraceLab } from "./trace-lab";
+import { QuestionSlide } from "./question-slide";
 import { ScrollLesson } from "./scroll-lesson";
 
 const mst = kruskal();
@@ -176,8 +177,9 @@ function Technology() {
   </div>;
 }
 
-export function SlideBody({ layout, emblem }: { layout: Layout; emblem?: ReactNode }) {
+export function SlideBody({ layout, emblem, presenter }: { layout: Layout; emblem?: ReactNode; presenter?: number }) {
   switch (layout) {
+    case "question": return <QuestionSlide presenter={presenter!} />;
     case "problem": return <Problem />;
     case "solution": return <div className="content-split content-split--sidebar"><MapKey entries={[["Buildings", "Six vertices identify campus destinations."], ["Walkways", "Ten undirected edges connect them."], ["Weights", "A number measures distance or installation cost."]]} /><CampusVisual initialMode="3D" graph={false} graphTour inspect title="Campus model / Graph overlay" /></div>;
     case "terms": return <Terminology />;

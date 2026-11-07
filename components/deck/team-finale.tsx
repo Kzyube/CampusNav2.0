@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { presenters, slides } from "@/lib/slides";
+import { presenters, originalSlides } from "@/lib/slides";
 import { StudentArt } from "./student-doodle";
 import { Mark } from "../brand";
 
@@ -47,7 +47,7 @@ function StudentArrival() {
 
 export function TeamFinale({ emblem }: { emblem?: ReactNode }) {
   return <div className="close-layout">
-    <div className="close-copy">{emblem}<Mark size={44} /><span className="eyebrow">Thank you / Chapter 7</span><h1>{slides[19].headline}</h1><p>{slides[19].lead}</p><StudentArrival /></div>
+    <div className="close-copy">{emblem}<Mark size={44} /><span className="eyebrow">Thank you / Chapter 7</span><h1>{originalSlides[19].headline}</h1><p>{originalSlides[19].lead}</p><StudentArrival /></div>
     <section className="team-panel" aria-label="CampusNav team">
       <h2>Meet the team</h2>
       <ul className="team-grid">

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { bfs, connectivity, dfs, dijkstra, findRoute, kruskal, validateRoute } from "../lib/algorithms";
 import { adjacency, buildings, edges, isolatedFEdges, vertices, type Vertex } from "../lib/graph";
-import { presenters, slides } from "../lib/slides";
+import { originalSlides, presenters, slides } from "../lib/slides";
+import { questionGroups, questionSets } from "../lib/questions";
 import { tagalogNotes } from "../lib/tagalog-notes";
 
 test("the campus graph has the specified buildings and weights", () => {
@@ -76,20 +77,20 @@ test("slide ownership, order, timing, and speaker notes cover the full presentat
   assert.deepEqual(presenters.map(person => person.name), [
     "Kzyube Napoles", "Hance Subaldo", "Lowell Ronamo", "Hilary Cañas", "Princess Man Oyao", "Gary Dapilaga", "Ram Alferez", "Jinson Oplimo",
   ]);
-  assert.deepEqual(slides.map(slide => slide.presenter), [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 7, 7]);
-  assert.deepEqual(slides.map(slide => slide.layout), [
+  assert.deepEqual(originalSlides.map(slide => slide.presenter), [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 7, 7]);
+  assert.deepEqual(originalSlides.map(slide => slide.layout), [
     "cover", "problem", "solution", "terms", "storage", "breadth", "bfs", "dfs", "compare", "connection",
     "components", "challenge", "relax", "dijkstra", "tree", "mst", "union", "kruskal", "tech", "close",
   ]);
-  assert.equal(slides.reduce((total, slide) => total + slide.seconds, 0), 1800);
-  assert.equal(new Set(slides.map(slide => slide.guide)).size, 20);
+  assert.equal(slides.reduce((total, slide) => total + slide.seconds, 0), 2280);
+  assert.equal(new Set(slides.map(slide => slide.guide)).size, 28);
   assert.ok(slides.every(slide => slide.guide && slide.cue && slide.notes.length === 5 && slide.notes.every(Boolean)));
 });
 
 
 test("every slide has a distinct Tagalog guide, cue, and spoken script", () => {
-  assert.equal(tagalogNotes.length, slides.length);
-  assert.equal(new Set(tagalogNotes.map(([guide]) => guide)).size, slides.length);
+  assert.equal(tagalogNotes.length, originalSlides.length);
+  assert.equal(new Set(tagalogNotes.map(([guide]) => guide)).size, originalSlides.length);
   assert.ok(tagalogNotes.every(entry => entry.length === 5 && entry.every(text => text.trim())));
 });
 
@@ -101,4 +102,22 @@ test("demonstration paths respect open walkways and show Kruskal’s actual cycl
   assert.deepEqual(findRoute("A", "F", available.filter(id => !isolatedFEdges.includes(id))), []);
   const rejected = kruskal().steps.find(step => step.active === "A-B")!;
   assert.deepEqual(findRoute("A", "B", rejected.highlighted ?? []), ["A", "C", "B"]);
+});
+
+
+test("each presenter has a question slide and the draw excludes the presenting group", () => {
+  assert.equal(slides.length, 28);
+  assert.deepEqual(questionGroups.map(group => group.number), [1, 3, 4, 5]);
+  assert.deepEqual(questionGroups.map(group => group.students.length), [9, 8, 8, 8]);
+  assert.equal(new Set(questionGroups.flatMap(group => [...group.students])).size, 33);
+  assert.equal(questionSets.length, presenters.length);
+  for (let presenter = 0; presenter < presenters.length; presenter++) {
+    const section = slides.filter(slide => slide.presenter === presenter);
+    assert.equal(section.at(-1)?.layout, "question");
+    assert.equal(section.filter(slide => slide.layout === "question").length, 1);
+    assert.ok(questionSets[presenter].questions.every(Boolean));
+    assert.ok(questionSets[presenter].tagalogQuestions.every(Boolean));
+    assert.ok(questionSets[presenter].answers.every(Boolean));
+    assert.ok(questionSets[presenter].tagalogAnswers.every(Boolean));
+  }
 });

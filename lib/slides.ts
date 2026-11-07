@@ -1,3 +1,5 @@
+import { questionSets } from "./questions";
+
 export const presenters = [
   { name: "Kzyube Napoles", role: "CEO / Main Presenter", section: "The product", initials: "KN", question: "How can one map help a whole campus?" },
   { name: "Hance Subaldo", role: "Product Manager", section: "Graph models", initials: "HS", question: "How does a campus map become a graph?" },
@@ -9,7 +11,7 @@ export const presenters = [
   { name: "Jinson Oplimo", role: "Technical Director", section: "Kruskal & closing", initials: "JO", question: "Which links should we add first?" },
 ] as const;
 
-export type Layout = "cover" | "problem" | "solution" | "terms" | "storage" | "breadth" | "bfs" | "dfs" |
+export type Layout = "cover" | "problem" | "solution" | "terms" | "storage" | "breadth" | "bfs" | "dfs" | "question" |
   "compare" | "connection" | "components" | "challenge" | "relax" | "dijkstra" | "tree" | "mst" | "union" | "kruskal" | "tech" | "close";
 type Notes = [opening: string, explanation: string, technical: string, example: string, transition: string];
 type Slide = {
@@ -23,9 +25,10 @@ type Slide = {
   guide: string;
   cue: string;
   notes: Notes;
+  sourceIndex?: number;
 };
 
-export const slides: Slide[] = [
+export const originalSlides: Slide[] = [
   {
     title: "Introducing CampusNav", headline: "CampusNav", presenter: 0, seconds: 60, layout: "cover",
     lead: "One campus map for finding walking routes and planning connections between buildings.",
@@ -305,6 +308,29 @@ export const slides: Slide[] = [
     ],
   },
 ];
+
+// Insert one discussion slide at the end of each presenter's section.
+export const slides: Slide[] = originalSlides.flatMap((slide, index) => {
+  const original = { ...slide, sourceIndex: index };
+  if (originalSlides[index + 1]?.presenter === slide.presenter) return [original];
+  const { questions, answers } = questionSets[slide.presenter];
+  const person = presenters[slide.presenter];
+  return [original, {
+    title: `${person.section}: class questions`, headline: "Let’s check in", presenter: slide.presenter,
+    seconds: 60, layout: "question" as const,
+    lead: `Two questions about ${person.section.toLowerCase()}.`,
+    takeaway: "Select a group, then select a student. Give them a moment to think.",
+    guide: `Check the class’s understanding of ${person.section.toLowerCase()} with two questions.`,
+    cue: "Select Group, then Select Student. Read question 1 aloud. Repeat the draw for question 2 if you want another respondent.",
+    notes: [
+      `“Let’s check what we learned about ${person.section.toLowerCase()}. I’ll choose a group first, then a student.”`,
+      `Ask question 1: “${questions[0]}” Allow time to answer. Expected answer: ${answers[0]}`,
+      `Ask question 2: “${questions[1]}” You may select another group and student. Expected answer: ${answers[1]}`,
+      "Thank the student for answering. If needed, use the expected answer to clarify the point in simple terms.",
+      slide.presenter < presenters.length - 1 ? `“Thank you. Let’s continue with ${presenters[slide.presenter + 1].name}.”` : "“Thank you for joining our discussion.”",
+    ],
+  }];
+});
 
 export const slideNumber = (index: number) => String(index + 1).padStart(2, "0");
 export function duration(seconds: number) {

@@ -33,7 +33,7 @@ function Modal({ open, onClose, label, variant, children }: {
 
 function Overview({ index, onSelect }: { index: number; onSelect: (index: number) => void }) {
   return <div className="overview-content">
-    <h2>Presentation overview</h2><p>20 slides · 8 presenters · 30 minutes</p>
+    <h2>Presentation overview</h2><p>{slides.length} slides · {presenters.length} presenters · {slides.reduce((total, item) => total + item.seconds, 0) / 60} minutes</p>
     <div className="overview-grid">{presenters.map((presenter, group) => <section key={presenter.name}>
       <div className="overview-person"><span>{String(group + 1).padStart(2, "0")}</span><div><h3>{presenter.name}</h3><p>{presenter.section}</p></div></div>
       {slides.map((slide, i) => slide.presenter === group && <button type="button" key={slide.title} onClick={() => onSelect(i)} aria-current={i === index ? "step" : undefined}>
@@ -134,12 +134,12 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
     </header>
 
     <main className="deck-main" aria-label="Presentation slides">
-      <div className="deck-meta"><span><i /> CampusNav presentation</span><span>{presenters[slide.presenter].section} <b>{slideNumber(index)} / 20</b></span></div>
+      <div className="deck-meta"><span><i /> CampusNav presentation</span><span>{presenters[slide.presenter].section} <b>{slideNumber(index)} / {slides.length}</b></span></div>
       <section className={`deck-stage deck-stage--${slide.layout}`} aria-label={slide.title} style={{ "--scene-ink": mark.color, "--scene-tint": mark.tint } as CSSProperties}>
         <SlideStage key={index} entrance={mark.entrance}>
           {slide.layout === "cover" ? <Cover emblem={emblem} onNext={() => navigate(index + 1)} /> : slide.layout === "close" ? <SlideBody layout="close" emblem={emblem} /> : <div className="standard-slide">
             <div className="slide-heading slide-heading--marked">{emblem}<span className="eyebrow"><i /> {slideNumber(index)} / {presenters[slide.presenter].section}</span><h1>{slide.headline ?? slide.title}</h1><p>{slide.lead}</p>{startsSection && <p className="slide-handoff"><strong>{presenter.name}</strong> <span>{presenter.question}</span></p>}</div>
-            <div className={mood ? "slide-body slide-body--story" : "slide-body"}><div className="slide-body-content"><SlideBody layout={slide.layout} /></div>{mood && <StudentDoodle mood={mood} />}</div>
+            <div className={mood ? "slide-body slide-body--story" : "slide-body"}><div className="slide-body-content"><SlideBody layout={slide.layout} presenter={slide.presenter} /></div>{mood && <StudentDoodle mood={mood} />}</div>
             <div className="takeaway"><ArrowDownRight size={18} /><p>{slide.takeaway}</p></div>
           </div>}
         </SlideStage>
@@ -148,7 +148,7 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
         <PresenterBadge index={slide.presenter} />
         <div className="deck-pagination">
           <button className="button button--secondary" type="button" aria-label="Previous slide" title="Previous slide (←)" disabled={index === 0} onClick={() => navigate(index - 1)}><ChevronLeft size={20} /></button>
-          <div className="deck-progress"><div><span>Slide <b>{slideNumber(index)}</b> of 20</span><span>{duration(slide.seconds)}</span></div><progress max={slides.length} value={index + 1} aria-label="Presentation progress" /></div>
+          <div className="deck-progress"><div><span>Slide <b>{slideNumber(index)}</b> of {slides.length}</span><span>{duration(slide.seconds)}</span></div><progress max={slides.length} value={index + 1} aria-label="Presentation progress" /></div>
           <button className="button button--primary" type="button" aria-label="Next slide" title="Next slide (→)" disabled={index === slides.length - 1} onClick={() => navigate(index + 1)}><ChevronRight size={20} /></button>
         </div>
         <div className="next-slide"><span className="eyebrow">{index < slides.length - 1 ? slides[index + 1].presenter === slide.presenter ? "Up next" : `Handoff · ${presenters[slides[index + 1].presenter].name}` : "End of presentation"}</span><strong>{slides[index + 1]?.title ?? "Questions & discussion"}</strong></div>

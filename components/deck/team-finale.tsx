@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { presenters, originalSlides } from "@/lib/slides";
 import { StudentArt } from "./student-doodle";
+import { SlideSculpture } from "./slide-sculpture";
 import { Mark } from "../brand";
 
 const doodles = [
@@ -49,6 +50,7 @@ export function TeamFinale({ emblem }: { emblem?: ReactNode }) {
   return <div className="close-layout">
     <div className="close-copy">{emblem}<Mark size={44} /><span className="eyebrow">Thank you / Chapter 7</span><h1>{originalSlides[19].headline}</h1><p>{originalSlides[19].lead}</p><StudentArrival /></div>
     <section className="team-panel" aria-label="CampusNav team">
+      <SlideSculpture kind="finale" />
       <h2>Meet the team</h2>
       <ul className="team-grid">
         {presenters.map(({ name }, index) => <li key={name}><Portrait index={index} /><span>{name}</span></li>)}

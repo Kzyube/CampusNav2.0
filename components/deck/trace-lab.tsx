@@ -97,7 +97,7 @@ export function TraceLab({ kind }: { kind: keyof typeof traces }) {
     setPlaying(true);
   }
 
-  return <section className="trace-lab" aria-label={label}>
+  return <section className={`trace-lab trace-lab--${kind}`} aria-label={label}>
     <CampusVisual title={label} state={step} emphasis={emphasis} groupLabels={kind === "components" ? step.components?.map((_, i) => `Group ${i + 1}`) : undefined} weights={kind === "dijkstra" || kind === "kruskal"} />
     <div className="trace-console">
       <div className={showResult ? "trace-log trace-log--result" : "trace-log"} aria-live={active ? "off" : "polite"}>
@@ -111,10 +111,10 @@ export function TraceLab({ kind }: { kind: keyof typeof traces }) {
       {step.components && kind === "components" && <Tokens label="Components found" values={step.components.map(group => `{${[...group].sort().join(", ")}}`)} />}
       {step.distances && <div className="distance-grid" aria-label="Tentative distance and predecessor">
         {vertices.map(id => <div key={id} className={step.visited?.includes(id) ? "is-settled" : ""}>
-          <span>{id}</span><b>{Number.isFinite(step.distances![id]) ? step.distances![id] : "∞"}</b><small>{step.predecessors?.[id] ? `via ${step.predecessors[id]}` : "—"}</small>
+          <span>{id}</span><b key={`${id}-${step.distances![id]}`}>{Number.isFinite(step.distances![id]) ? step.distances![id] : "∞"}</b><small>{step.predecessors?.[id] ? `via ${step.predecessors[id]}` : "—"}</small>
         </div>)}
       </div>}
-      {cycle.length > 0 && considered && <div className="cycle-caption">{routeText([...cycle, considered.from])} would close a loop</div>}
+      {cycle.length > 0 && considered && <div className="cycle-caption">Creates a cycle · {routeText([...cycle, considered.from])}</div>}
       {kind === "kruskal" && <EdgeLedger sorted={minimumTree.sorted} step={step} />}
     </div>
     <div className="trace-controls">

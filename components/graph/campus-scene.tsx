@@ -8,6 +8,7 @@ import { BoxGeometry, Group, MathUtils, Vector3, type Mesh } from "three";
 import { buildings, buildingById, edges, type Edge, type Vertex } from "@/lib/graph";
 import type { GraphState } from "@/lib/algorithms";
 import { nodeColor } from "./network-map";
+import { CampusDetails, CampusLife } from "./campus-details";
 
 const cube = new BoxGeometry(1, 1, 1);
 const cameraRest = new Vector3(9.2, 18.2, 19.6);
@@ -77,7 +78,17 @@ function Building({ id, selected, state, graph, markerDelay, onSelect }: {
         ))}
         <Box at={[width / 2 + 0.01, height * 0.66, -0.12]} size={[0.028, 0.17, depth * 0.65]} color="#45605a" />
         <Box at={[0.13, 0.28, depth / 2 + 0.02]} size={[0.28, 0.4, 0.036]} color="#334640" />
-
+        {(id === "B" || id === "D") && [-.48, -.16, .16, .48].map(x => (
+          <Box key={x} at={[x, height + .24, -.3]} size={[.28, .04, .36]} color="#41667b" />
+        ))}
+        {(id === "A" || id === "C" || id === "E") && <>
+          <Box at={[width * .27, height + .31, -depth * .24]} size={[.3, .26, .28]} color="#73867e" />
+          <Box at={[width * .27, height + .45, -depth * .24]} size={[.35, .04, .32]} color="#d0d6b9" />
+        </>}
+        {id === "F" && <>
+          <Box at={[0, height + .22, -.21]} size={[1.34, .075, .62]} color="#7f9a66" />
+          {[-.43, 0, .43].map(x => <Box key={x} at={[x, height + .29, -.21]} size={[.22, .12, .28]} color="#a4be74" />)}
+        </>}
       </group>
       {graph && <GraphMarker color={accent} active={active} delay={markerDelay} />}
     </group>
@@ -126,12 +137,12 @@ function LinkStrip({ edge, state, graph, reduced, revealDelay }: { edge: Edge; s
 
 const trees: [number, number, number][] = [
   [-8.3, -3.45, 0.8], [-8.05, -2.56, 0.66], [-7.99, 0.35, 0.9], [-7.54, 1.13, 0.6], [-7.43, 3.6, 0.79],
-  [-5.7, -4.65, 0.92], [-4.65, -4.63, 0.61], [-1.3, -5.17, 0.72], [-0.4, -5.02, 0.9],
-  [2.75, -5.09, 0.8], [4.05, -4.9, 0.65], [5.15, -4.35, 0.8], [7.71, -3.3, 0.83],
+  [-6.15, -5.64, 0.92], [-4.65, -5.61, 0.61], [-.3, -5.17, 0.72], [.9, -5.02, 0.9],
+  [2.75, -5.09, 0.8], [4.05, -5.3, 0.65], [5.15, -5.28, 0.8], [8.54, -3.62, 0.83],
   [8.05, -2.46, 0.55], [8.15, -1.74, 0.77], [8.55, 3.2, 0.95], [7.95, 3.65, 0.72],
-  [6.11, 4.68, 0.79], [6.9, 4.64, 0.56], [-5.93, 4.45, 0.77], [-4.83, 4.63, 0.66],
+  [6.56, 5.46, 0.79], [6.98, 4.64, 0.56], [-5.93, 4.45, 0.77], [-4.83, 4.63, 0.66],
   [-2.21, 3.93, 0.85], [-1.58, 4.51, 0.69], [0.15, 4.82, 0.88], [-0.42, -0.54, 0.64],
-  [0.29, -0.35, 0.54], [4.22, 0.61, 0.56], [5.03, 0.3, 0.61], [3.33, 3.81, 0.82],
+  [0.29, -0.35, 0.54], [4.22, 0.61, 0.56], [5.03, 0.3, 0.61], [3.11, 3.93, 0.82],
 ];
 
 function Ground() {
@@ -181,7 +192,7 @@ function CameraSetup({ reduced, topDown, graphTour, onLost }: { reduced: boolean
     invalidate();
   });
   return <>
-    <OrthographicCamera makeDefault position={[10.2, 18, 19.7]} zoom={Math.min(size.width / 23, size.height / 12.75)} near={0.1} far={100} />
+    <OrthographicCamera makeDefault position={[10.2, 18, 19.7]} zoom={Math.min(size.width / 24.5, size.height / 13.25)} near={0.1} far={100} />
     <OrbitControls makeDefault enabled={!topDown} enableDamping={!reduced} enableZoom={false} enablePan={false}
       minPolarAngle={graphTour ? .08 : .39} maxPolarAngle={1.13} minAzimuthAngle={-0.43} maxAzimuthAngle={0.93} />
   </>;
@@ -218,8 +229,8 @@ function PositionAnnotations({ annotations, elements }: { annotations: Annotatio
   return null;
 }
 
-export default function CampusScene({ state, selected, onSelect, graph, graphTour = false, weights, reduced, onLost }: {
-  state: GraphState; selected?: Vertex; onSelect?: (id: Vertex) => void; graph: boolean; graphTour?: boolean; weights: boolean; reduced: boolean; onLost: () => void;
+export default function CampusScene({ state, selected, onSelect, graph, graphTour = false, weights, reduced, paused, onLost }: {
+  state: GraphState; selected?: Vertex; onSelect?: (id: Vertex) => void; graph: boolean; graphTour?: boolean; weights: boolean; reduced: boolean; paused: boolean; onLost: () => void;
 }) {
   const elements = useRef(new Map<string, HTMLElement>());
   const annotations = graph && weights ? [...buildingAnnotations, ...weightAnnotations] : buildingAnnotations;
@@ -239,8 +250,10 @@ export default function CampusScene({ state, selected, onSelect, graph, graphTou
       <directionalLight position={[5, 5, -8]} intensity={0.57} color="#c3e7f4" />
       <CameraSetup reduced={reduced} graphTour={graphTour} topDown={graphTour && graph} onLost={onLost} />
       <Ground />
+      <CampusDetails />
       {edges.map((edge, index) => <LinkStrip key={edge.id} edge={edge} state={state} graph={graph} reduced={reduced} revealDelay={graphTour ? .63 + index * .052 : undefined} />)}
       {buildings.map(({ id }, index) => <Building key={id} id={id} state={state} selected={selected} graph={graph} onSelect={onSelect} markerDelay={graphTour && !reduced ? .27 + index * .052 : undefined} />)}
+      {!(graphTour && graph) && <CampusLife active={!reduced && !paused} />}
       <PositionAnnotations annotations={annotations} elements={elements} />
     </Canvas>
     <div className="scene-annotations">

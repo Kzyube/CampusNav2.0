@@ -2,7 +2,8 @@
 
 import { Component, useCallback, useSyncExternalStore, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { Box, Layers3, Map, MoveUpRight } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
+import { Box, Layers3, Map, MoveUpRight, Pause, Play } from "lucide-react";
 import { playDeckSound } from "../deck/deck-sound";
 import { NetworkMap, componentColors } from "./network-map";
 import type { MapEmphasis } from "./map-motion";
@@ -30,9 +31,11 @@ export function CampusVisual({ state, initialMode = "2D", graph = true, weights 
   state?: GraphState; initialMode?: "2D" | "3D"; graph?: boolean; weights?: boolean; title?: string; inspect?: boolean; allow3D?: boolean; controls?: boolean; groupLabels?: string[]; graphTour?: boolean; emphasis?: MapEmphasis;
 }) {
   const lightweight = useSyncExternalStore(subscribe, avoid3D, () => true);
+  const reduced = Boolean(useReducedMotion());
   const [preferred, setPreferred] = useState<"2D" | "3D" | null>(null);
   const [failed, setFailed] = useState(false);
   const [overlay, setOverlay] = useState(graph);
+  const [paused, setPaused] = useState(false);
   const [selected, setSelected] = useState<Vertex | undefined>();
   const mode = preferred ?? (lightweight ? "2D" : initialMode);
   const canShow3D = allow3D && !failed && mode === "3D";
@@ -56,7 +59,7 @@ export function CampusVisual({ state, initialMode = "2D", graph = true, weights 
           <NetworkMap state={state} selected={selected} onSelect={onSelect} showWeights={weights} showGroupOutline={Boolean(groups)} label={title} emphasis={emphasis} revealGraph={graphTour && overlay} />
         </div>
         {canShow3D && <div className="scene-layer"><CanvasBoundary onError={lost}>
-          <CampusScene state={state ?? {}} graph={overlay} graphTour={graphTour} selected={selected} onSelect={onSelect} weights={weights && (initialMode !== "3D" || !graph)} reduced={lightweight} onLost={lost} />
+          <CampusScene state={state ?? {}} graph={overlay} graphTour={graphTour} selected={selected} onSelect={onSelect} weights={weights && (initialMode !== "3D" || !graph)} reduced={reduced} paused={paused} onLost={lost} />
         </CanvasBoundary></div>}
       </div>
       <div className="visual-top">
@@ -64,6 +67,9 @@ export function CampusVisual({ state, initialMode = "2D", graph = true, weights 
         {controls && allow3D && !failed && <div className="visual-toggle" aria-label="Map display">
           <button type="button" aria-pressed={!canShow3D} onClick={() => selectMode("2D")}><Map size={13} /> 2D</button>
           <button type="button" aria-pressed={canShow3D} onClick={() => selectMode("3D")}><Box size={13} /> 3D</button>
+          {canShow3D && !reduced && !(graphTour && overlay) && <button type="button" aria-label={paused ? "Resume campus animation" : "Pause campus animation"} title={paused ? "Resume campus animation" : "Pause campus animation"} onClick={() => setPaused(value => !value)}>
+            {paused ? <Play size={13} /> : <Pause size={13} />}
+          </button>}
         </div>}
       </div>
       <div className="visual-bottom">

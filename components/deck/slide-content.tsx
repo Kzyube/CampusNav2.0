@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ArrowDown, ArrowRight, ArrowUpRight, Cable, MapPin, Navigation, Radio, Waypoints } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Cable, MapPin, Navigation, Radio } from "lucide-react";
 import { bfs, connectivity, dfs, findRoute, kruskal, type GraphState } from "@/lib/algorithms";
 import { adjacency, edges, edgeById, edgeId, isolatedFEdges, routeText, vertices, type EdgeId, type Vertex } from "@/lib/graph";
 import { type Layout, presenters, slides } from "@/lib/slides";
@@ -11,6 +11,8 @@ import { playDeckSound } from "./deck-sound";
 import { PhoneWalkthrough } from "./phone-walkthrough";
 import { TeamFinale } from "./team-finale";
 import { TraceLab } from "./trace-lab";
+import { StudentArt } from "./student-doodle";
+import { SlideSculpture } from "./slide-sculpture";
 import { QuestionSlide } from "./question-slide";
 import { ScrollLesson } from "./scroll-lesson";
 
@@ -30,6 +32,7 @@ function MapKey({ entries }: { entries: [string, string][] }) {
 
 function Problem() {
   return <div className="problem-layout">
+    <SlideSculpture kind="wayfinder" />
     <div className="problem-lanes">
       <article><span className="eyebrow"><Navigation size={17} /> Wayfinding</span><h3>A route for one student</h3><p>From Administration to the Student Center, with the smallest total walking distance.</p><div className="route-strip"><b>A</b><span /><ArrowRight size={23} /><b>F</b></div></article>
       <article><span className="eyebrow"><Cable size={17} /> Infrastructure</span><h3>A network for six buildings</h3><p>Connect the entire campus with the smallest total conduit cost.</p><div className="route-strip route-strip--many">{vertices.map(id => <b key={id}>{id}</b>)}</div></article>
@@ -48,7 +51,7 @@ const terms: { label: string; text: string; state: GraphState }[] = [
 
 function Terminology() {
   return <ScrollLesson featured steps={terms} renderVisual={index =>
-    <CampusVisual title="Buildings, edges and weights" state={terms[index].state} allow3D={false} />
+    <CampusVisual title="Buildings, edges and weights" state={terms[index].state} />
   } />;
 }
 
@@ -61,14 +64,14 @@ function Storage() {
         <thead><tr><th scope="col"><span className="sr-only">Building</span></th>{vertices.map(id => <th scope="col" key={id}>{id}</th>)}</tr></thead>
         <tbody>{vertices.map(from => <tr className={highlight === from ? "is-marked" : ""} key={from}>
           <th scope="row"><button type="button" onClick={() => setHighlight(from)} aria-pressed={highlight === from} aria-label={`Highlight row ${from}`}>{from}</button></th>
-          {vertices.map(to => <td key={to}>{edgeById.get(edgeId(from, to))?.weight ?? "—"}</td>)}
+          {vertices.map(to => <td key={to} className={from === "B" && to === "C" && highlight === "B" ? "storage-example" : undefined}>{edgeById.get(edgeId(from, to))?.weight ?? "—"}</td>)}
         </tr>)}</tbody>
       </table>
     </div>
     <div className="storage-side">
       <div className="section-label"><h3>Adjacency list</h3><span>O(V + E) space</span></div>
       <div className="neighbor-table">{vertices.map(id => <button key={id} type="button" aria-pressed={id === highlight} onClick={() => setHighlight(id)}>
-        <b>{id}</b><span>{adjacency[id].map(neighbor => `${neighbor.id} (${neighbor.weight})`).join("  ·  ")}</span>
+        <b>{id}</b><span>{adjacency[id].map((neighbor, index) => <span key={neighbor.id} className={id === "B" && neighbor.id === "C" && highlight === "B" ? "storage-example" : undefined}>{index > 0 && " · "}{neighbor.id} ({neighbor.weight})</span>)}</span>
       </button>)}</div>
     </div>
   </div>;
@@ -88,6 +91,7 @@ function Breadth() {
 
 function Comparison() {
   return <div className="comparison-layout">
+    <SlideSculpture kind="traversal" />
     <table aria-label="BFS and DFS compared">
       <thead><tr><th scope="col">From A</th><th scope="col">Breadth-first search</th><th scope="col">Depth-first search</th></tr></thead>
       <tbody>
@@ -117,7 +121,7 @@ function Connection() {
       <h3>Close a walkway to F</h3>
       <div className="term-buttons">{isolatedFEdges.map(id => <button key={id} type="button" className="button button--secondary" aria-pressed={removed.includes(id)}
         onClick={() => toggle(id)}>{id.replace("-", "–")}</button>)}</div>
-      <div className="term-definition" aria-live="polite"><h3>{groups.length === 1 ? "Campus connected" : "Student Center isolated"}</h3>
+      <div className="term-definition" aria-live="polite"><h3>{groups.length === 1 ? "Campus connected" : "No route to F"}</h3>
         <p>{detour.length ? `Open detour · ${routeText(detour)}` : isolated ? "F has no open walkway." : "Try closing one walkway to the Student Center."}</p>
       </div>
     </div>
@@ -148,7 +152,7 @@ function TreeComparison() {
   ];
   return <ScrollLesson steps={steps} renderVisual={index =>
     <CampusVisual title={index === 0 ? "All 10 candidate links" : "5 links in the spanning tree"}
-      state={index === 0 ? undefined : { removed, highlighted: mst.accepted }} allow3D={false} />
+      state={index === 0 ? undefined : { removed, highlighted: mst.accepted }} />
   } />;
 }
 
@@ -167,12 +171,12 @@ function Union() {
 
 function Technology() {
   const rows = [
-    { icon: Navigation, title: "Wayfinding", desc: "Dijkstra finds the lowest-distance walk.", output: "Shortest route" },
-    { icon: Radio, title: "Campus access", desc: "BFS or DFS finds which buildings remain reachable.", output: "Reachable buildings" },
-    { icon: Cable, title: "Infrastructure", desc: "Kruskal selects a minimum-cost set of links.", output: "Spanning tree" },
+    { icon: Radio, title: "Explore", desc: "BFS and DFS find reachable buildings.", output: "BFS / DFS" },
+    { icon: Navigation, title: "Find a route", desc: "Dijkstra finds the lowest-distance walk.", output: "Dijkstra" },
+    { icon: Cable, title: "Connect the campus", desc: "Kruskal selects links with the lowest total cost.", output: "Kruskal" },
   ];
   return <div className="technology-layout">
-    <div className="tech-source"><Waypoints size={40} strokeWidth={1.5} /><h3>Campus graph</h3><span>6 buildings · 10 links</span><ArrowDown className="tech-mobile-arrow" size={20} /></div>
+    <div className="tech-source"><SlideSculpture kind="graph" /><h3>Campus graph</h3><span>6 buildings · 10 links</span></div>
     <div className="tech-destinations">{rows.map(({ icon: Icon, title, desc, output }) => <article key={title}><Icon size={24} strokeWidth={1.7} /><div><h3>{title}</h3><p>{desc}</p></div><span>{output}</span></article>)}</div>
   </div>;
 }
@@ -229,7 +233,7 @@ export function Cover({ onNext, emblem }: { onNext: () => void; emblem: ReactNod
         <div><dt>08</dt><dd>Presenters</dd></div>
       </dl>
     </div>
-    <div className="cover-map-window"><CampusVisual initialMode="3D" inspect title="Campus model / Site 01" /></div>
+    <div className="cover-map-window"><CampusVisual initialMode="3D" inspect title="Campus model / Site 01" /><div className="cover-story" aria-hidden="true"><StudentArt mood="lost" compact /><svg viewBox="0 0 130 48"><path className="cover-story-route-base" d="M5 38 C35 38 35 7 68 15 S105 36 124 7" /><path className="cover-story-route" pathLength="1" d="M5 38 C35 38 35 7 68 15 S105 36 124 7" /><circle cx="124" cy="7" r="5" /></svg><span>Find your way</span></div></div>
   </div>;
 }
 

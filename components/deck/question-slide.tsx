@@ -46,7 +46,12 @@ export function QuestionSlide({ presenter }: { presenter: number }) {
     </div>
     <aside className="question-draw" aria-label="Classmate selection">
       <div className="draw-orbit draw-orbit--one" aria-hidden="true" /><div className="draw-orbit draw-orbit--two" aria-hidden="true" />
-      <div className="draw-heading"><span className="draw-icon"><UsersRound size={20} /></span><div><span className="eyebrow">Your turn</span><h2>Let’s hear from you.</h2></div><Sparkles className="draw-sparkle" size={22} aria-hidden="true" /></div>
+      <div className="draw-heading"><span className="draw-icon"><UsersRound size={20} /></span><div><span className="eyebrow">Your turn</span><h2>Let’s hear from you.</h2></div>
+        <div className={`draw-die${drawing ? " is-rolling" : ""}`} aria-hidden="true">
+          <div className="draw-die-body">{["?", "✦", "?", "✦", "?", "✦"].map((face, i) => <span key={i}>{face}</span>)}</div>
+          <Sparkles className="draw-die-sparkle" size={14} />
+        </div>
+      </div>
       <div className="draw-result" aria-live="polite" aria-atomic="true">
         <span className="draw-result-label">{drawing === "group" ? "Choosing a group…" : drawing === "student" ? "Choosing a student…" : group ? `Group ${group.number}` : "First, choose a group"}</span>
         <AnimatePresence mode="wait">

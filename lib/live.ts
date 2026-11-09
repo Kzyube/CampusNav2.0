@@ -9,7 +9,7 @@ export const games = [
 export type Game = (typeof games)[number];
 export type GameResult = { answer: NonNullable<PublicRound["answer"]>; participants: Participant[] };
 export type Phase = "ready" | "running" | "paused" | "ended" | "revealed";
-export type Action = "start" | "pause" | "reset" | "reveal";
+export type Action = "start" | "pause" | "reset" | "reset-game" | "reveal";
 
 export type Submission = {
   route: Vertex[];
@@ -19,6 +19,8 @@ export type Submission = {
   best: number;
   optimal: boolean;
   at: number;
+  elapsedMs: number;
+  order: number;
 };
 
 export type Participant = {
@@ -27,6 +29,12 @@ export type Participant = {
   online: boolean;
   submission?: Submission;
 };
+
+export function rankCorrectSubmissions(participants: readonly Participant[]) {
+  return participants
+    .flatMap(participant => participant.submission?.optimal ? [{ ...participant, submission: participant.submission }] : [])
+    .sort((a, b) => a.submission.order - b.submission.order);
+}
 
 export type PublicRound = {
   id: number;
@@ -56,7 +64,7 @@ export type Ack<T = undefined> = (result: Reply<T>) => void;
 
 export interface FromServer {
   "round": (round: PublicRound) => void;
-  "self": (self: Self | null) => void;
+  "self": (self: Self | null, reason?: "game-reset") => void;
   "games": (results: Partial<Record<Game["id"], GameResult>>) => void;
   "participants": (participants: Participant[]) => void;
 }

@@ -95,7 +95,7 @@ export const tagalogNotes: [about: string, cue: string, opening: string, explana
     "Sundan ang mga update ni Dijkstra at ipakita ang resulta ng Game 1.",
     "Gamitin ang Next step hanggang Update B to 3. Pindutin ang Final step. Sa admin, pindutin ang Reveal answer.",
     "Balikan natin ang unang malaking pagbabago. Bumaba sa 3 ang distansya papuntang B dahil dumaan tayo sa C.",
-    "Sa dulo, 13 ang pinakamababang distansya papuntang F. Sundan pabalik ang via entries mula F, tapos baligtarin ang order. Lalabas ang A → C → B → D → E → F. Ang simpleng pag-scan ng bawat vertex ay O(V²). May mas mabilis na paraan gamit ang priority queue. Sa admin, basahin ang winner kung may valid na submission.",
+    "Sa dulo, 13 ang pinakamababang distansya papuntang F. Sundan pabalik ang via entries mula F, tapos baligtarin ang order. Lalabas ang A → C → B → D → E → F. Ang simpleng pag-scan ng bawat vertex ay O(V²). May mas mabilis na paraan gamit ang priority queue. Sa admin, basahin ang winner kung may nakapag-submit ng shortest route. Ang unang tamang sagot ang panalo.",
     "Kay Ram naman, ang goal ay makonekta ang buong campus sa pinakamababang gastos.",
   ],
   [

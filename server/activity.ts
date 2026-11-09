@@ -9,10 +9,11 @@ export type ActivityServer = Server<ToServer, FromServer, object, SocketData>;
 export function registerActivity(io: ActivityServer, presenterKey: string, allowLoopback: boolean) {
   const participants = new Map<string, Participant & { sockets: Set<string> }>();
   let game: Game = games[0];
-  const results: Partial<Record<Game["id"], GameResult>> = {};
+  let results: Partial<Record<Game["id"], GameResult>> = {};
   const answer = () => { const { route, distance } = dijkstra(game.start, game.target); return { route, distance }; };
   let phase: Phase = "ready";
   let id = 1;
+  let submissionOrder = 0;
   let remaining = roundDuration;
   let endsAt: number | null = null;
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -22,8 +23,8 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
     endsAt = null;
   }
 
-  function expire() {
-    if (phase !== "running" || endsAt === null || Date.now() < endsAt) return false;
+  function expire(at = Date.now()) {
+    if (phase !== "running" || endsAt === null || at < endsAt) return false;
     clearTimer();
     remaining = 0;
     phase = "ended";
@@ -70,6 +71,7 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
   function reset() {
     clearTimer();
     id++;
+    submissionOrder = 0;
     remaining = roundDuration;
     phase = "ready";
     for (const participant of participants.values()) participant.submission = undefined;
@@ -79,6 +81,15 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
     for (const [token, participant] of participants) {
       if (!participant.sockets.size) continue;
       io.to([...participant.sockets]).emit("self", selfFor(token));
+    }
+  }
+
+  function revokeStudent(sockets: ReadonlySet<string>, reason?: "game-reset") {
+    for (const socketId of sockets) {
+      const student = io.sockets.sockets.get(socketId);
+      if (!student) continue;
+      student.data.token = undefined;
+      student.emit("self", null, reason);
     }
   }
 
@@ -133,18 +144,23 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
 
     socket.on("student:submit", (data, ack) => {
       if (typeof ack !== "function") return;
-      if (expire()) broadcast();
+      const at = Date.now();
+      if (expire(at)) broadcast();
       const participant = socket.data.token && participants.get(socket.data.token);
       if (!participant) return fail(ack, "Join the activity before submitting.");
       if (data?.roundId !== id) return fail(ack, "A new round has started. Build your route for this round.");
       if (participant.submission) return fail(ack, "You already submitted a route in this round.");
-      if (phase !== "running") return fail(ack, "Submissions open while the countdown is running.");
+      if (phase !== "running" || endsAt === null) return fail(ack, "Submissions open while the countdown is running.");
       if (data.start !== game.start || data.target !== game.target) {
         return fail(ack, `Game ${game.id} runs from ${game.start} to ${game.target}.`);
       }
       const validation = validateRoute(data.route, data.start, data.target);
       if ("error" in validation) return fail(ack, validation.error);
-      participant.submission = { ...validation, start: data.start, target: data.target, at: Date.now() };
+      participant.submission = {
+        ...validation, start: data.start, target: data.target, at,
+        elapsedMs: Math.max(0, roundDuration - (endsAt - at)),
+        order: ++submissionOrder,
+      };
       io.to([...participant.sockets]).emit("self", selfFor(socket.data.token));
       broadcast();
       ack({ ok: true, value: undefined });
@@ -187,12 +203,7 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
       if (!entry) return fail(ack, "That participant has already left the roster.");
       const [token, participant] = entry;
       participants.delete(token);
-      for (const socketId of participant.sockets) {
-        const student = io.sockets.sockets.get(socketId);
-        if (!student) continue;
-        student.data.token = undefined;
-        student.emit("self", null);
-      }
+      revokeStudent(participant.sockets);
       broadcast();
       ack({ ok: true, value: undefined });
     });
@@ -219,6 +230,14 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
         case "reset":
           reset();
           break;
+        case "reset-game": {
+          const joined = [...participants.values()];
+          participants.clear();
+          results = {};
+          reset();
+          for (const participant of joined) revokeStudent(participant.sockets, "game-reset");
+          break;
+        }
         case "reveal":
           if (phase === "ready" || phase === "revealed") return fail(ack, "Start a round before revealing its answer.");
           if (endsAt !== null) remaining = Math.max(0, endsAt - Date.now());

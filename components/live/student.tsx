@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowDownRight, ArrowRight, Check, ChevronLeft, Navigation, RotateCcw, Undo2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, CircleCheck, CircleX, Navigation, RotateCcw, Route, Undo2 } from "lucide-react";
 import { Brand } from "../brand";
 import { NetworkMap } from "../graph/network-map";
 import { adjacency, buildingById, edgeById, routeEdges, routeText, type Vertex } from "@/lib/graph";
@@ -69,11 +69,14 @@ export function StudentActivity() {
     socket.current = client;
     token.current = getSaved(studentKey);
     client.on("round", setRound);
-    client.on("self", next => {
-      if (!next && token.current) {
+    client.on("self", (next, reason) => {
+      if (!next && (token.current || reason === "game-reset")) {
         token.current = null;
         save(studentKey, null);
-        setMessage("Your participant entry was removed. Join again to play.");
+        setMessage(reason === "game-reset"
+          ? "The presenter reset the game. Join again to play."
+          : "Your participant entry is no longer active. Join again to play.");
+        setBusy(false);
       }
       setSelf(next);
     });
@@ -120,13 +123,29 @@ export function StudentActivity() {
   }
 
   const game = round?.game ?? games[0];
+  const revealed = round?.phase === "revealed";
+  const submission = self?.submission;
+  const verdict = revealed && submission?.optimal !== undefined && submission.best !== undefined
+    ? { correct: submission.optimal, difference: submission.weight - submission.best }
+    : null;
   return <div className="live-page student-page">
-    <header className="live-header"><Brand /><span className="eyebrow"><span className={`status-dot ${online ? "is-online" : ""}`} />{online ? "Connected" : "Connecting"}</span></header>
+    <header className="live-header"><Brand /><span className="eyebrow"><span className={`status-dot ${online ? "is-online" : ""}`} />{!online ? "Connecting" : self ? "Connected" : "Ready to join"}</span></header>
     <main className="student-main">
       <div className="student-title">
         <span className="eyebrow"><Navigation size={15} /> Classroom activity / Game {game.id}</span>
         <h1>The shortest route</h1>
-        <p>Find the lowest-distance route from {buildingById[game.start].name} ({game.start}) to {buildingById[game.target].name} ({game.target}).</p>
+        <p>Find the route with the lowest total distance.</p>
+        <div className="student-endpoints" role="group" aria-label="Route endpoints">
+          <div className="student-endpoint">
+            <span className="eyebrow">From · Start</span>
+            <div><b>{game.start}</b><strong>{buildingById[game.start].name}</strong></div>
+          </div>
+          <ArrowRight className="student-endpoint-arrow" size={19} aria-hidden="true" />
+          <div className="student-endpoint student-endpoint--destination">
+            <span className="eyebrow">To · Destination</span>
+            <div><b>{game.target}</b><strong>{buildingById[game.target].name}</strong></div>
+          </div>
+        </div>
       </div>
       <div className="round-ribbon">
         <span><span className={`status-dot ${round?.phase === "running" ? "is-online" : ""}`} />{!online ? "Reconnecting to the laptop" : round ? phaseLabel[round.phase] : "Connecting"}</span>
@@ -140,13 +159,19 @@ export function StudentActivity() {
         </form>
         {!online && <p className="form-hint">Connect to the classroom hotspot and keep this page open.</p>}
       </section> : <section className="student-panel">
-        <div className="student-panel-title"><h2>{self.submission ? "Submission received" : "Build your route"}</h2><span>{self.nickname}</span></div>
-        {self.submission ? <div className="submission-receipt">
-          <div><Check size={20} /><strong>{routeText(self.submission.route)}</strong><span>{self.submission.weight} units</span></div>
-          <p>{self.submission.best === undefined ? "Your route is locked in. Wait for the presenter to reveal the answer." :
-            self.submission.optimal ? "You found a shortest route for your endpoints." : `Your route is ${self.submission.weight - self.submission.best} units longer than the shortest route for your endpoints.`}</p>
-          {self.submission.answer && <p className="answer-inline"><ArrowDownRight size={17} /> Best route · {routeText(self.submission.answer)} · {self.submission.best} units</p>}
-        </div> : round && <RouteBuilder game={game} key={round.id} phase={round.phase} onSubmit={submit} busy={busy || !online} />}
+        <div className="student-panel-title"><h2>{revealed ? "Your result" : submission ? "Submission received" : "Build your route"}</h2><span>{self.nickname}</span></div>
+        <div role="status" aria-atomic="true">
+          {submission ? <div className="submission-receipt">
+            {verdict && <div className={`submission-verdict submission-verdict--${verdict.correct ? "correct" : "incorrect"}`}>
+              {verdict.correct ? <CircleCheck size={23} aria-hidden="true" /> : <CircleX size={23} aria-hidden="true" />}
+              <strong>{verdict.correct ? "Correct" : "Incorrect"}</strong>
+            </div>}
+            <div><Route size={20} aria-hidden="true" /><strong>{routeText(submission.route)}</strong><span>{submission.weight} units</span></div>
+            <p>{!verdict ? "Your route is locked in. Wait for the presenter to reveal the answer." :
+              verdict.correct ? "You found a shortest route." : `Your route was ${verdict.difference} units longer than a shortest route.`}</p>
+          </div> : revealed && <p className="form-hint">You did not submit a route this round.</p>}
+        </div>
+        {!submission && !revealed && round && <RouteBuilder game={game} key={round.id} phase={round.phase} onSubmit={submit} busy={busy || !online} />}
       </section>}
       {message && <p className="form-error" role="alert">{message}</p>}
       {round?.answer && <aside className="revealed-answer"><span className="eyebrow">Class challenge answer</span><strong>{routeText(round.answer.route)}</strong><p>{round.answer.distance} distance units</p></aside>}

@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ArrowDownRight, ChevronLeft, ChevronRight, Grid2X2, Maximize, Minimize, NotebookText, Radio, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowDownRight, ChevronLeft, ChevronRight, ClipboardList, Grid2X2, Maximize, Minimize, NotebookText, Radio, Volume2, VolumeX, X } from "lucide-react";
 import { SlideMotionMark, getSlideMark } from "./slide-motion";
 import { SlideStage } from "./slide-stage";
 import { StudentDoodle } from "./student-doodle";
 import { playDeckSound, primeDeckSound, setDeckSound, soundEnabled, subscribeSound } from "./deck-sound";
 import { Brand } from "../brand";
 import { duration, presenters, slideNumber, slides } from "@/lib/slides";
+import { quizQuestions } from "@/lib/quiz";
+import { DeckQuiz } from "./deck-quiz";
 import { activeSlideKey, NotesLink, SpeakerNotes } from "./notes";
 import { Cover, PresenterBadge, SlideBody } from "./slide-content";
 
 function Modal({ open, onClose, label, variant, children }: {
-  open: boolean; onClose: () => void; label: string; variant: "overview" | "notes"; children: ReactNode;
+  open: boolean; onClose: () => void; label: string; variant: "overview" | "notes" | "quiz"; children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -23,7 +25,7 @@ function Modal({ open, onClose, label, variant, children }: {
   }, [open]);
 
   return <dialog ref={dialog} className={`deck-dialog deck-dialog--${variant}`} aria-label={label} onClose={onClose}
-    onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+    onClick={event => { if (variant !== "quiz" && event.target === event.currentTarget) onClose(); }}>
     <div className="dialog-content">
       <div className="dialog-toolbar"><span className="eyebrow">{label}</span><button className="icon-button" type="button" onClick={onClose} aria-label={`Close ${label.toLowerCase()}`}><X size={20} /></button></div>
       {children}
@@ -45,11 +47,12 @@ function Overview({ index, onSelect }: { index: number; onSelect: (index: number
 
 export function Presentation({ initialIndex }: { initialIndex: number }) {
   const [{ index, from }, setSlide] = useState({ index: initialIndex, from: initialIndex });
-  const [panel, setPanel] = useState<"overview" | "notes" | null>(null);
+  const [panel, setPanel] = useState<"overview" | "notes" | "quiz" | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [fitScreen, setFitScreen] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
   const slide = slides[index];
+  const lastSlide = index === slides.length - 1;
   const mood = slide.layout === "problem" ? "lost" : slide.layout === "solution" ? "learning" : null;
   const presenter = presenters[slide.presenter];
   const startsSection = index === 0 || slides[index - 1].presenter !== slide.presenter;
@@ -140,7 +143,12 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
           {slide.layout === "cover" ? <Cover emblem={emblem} onNext={() => navigate(index + 1)} /> : slide.layout === "close" ? <SlideBody layout="close" emblem={emblem} /> : <div className="standard-slide">
             <div className="slide-heading slide-heading--marked">{emblem}<span className="eyebrow"><i /> {slideNumber(index)} / {presenters[slide.presenter].section}</span><h1>{slide.headline ?? slide.title}</h1><p>{slide.lead}</p>{startsSection && <p className="slide-handoff"><strong>{presenter.name}</strong> <span>{presenter.question}</span></p>}</div>
             <div className={mood ? "slide-body slide-body--story" : "slide-body"}><div className="slide-body-content"><SlideBody layout={slide.layout} presenter={slide.presenter} /></div>{mood && <StudentDoodle mood={mood} />}</div>
-            <div className="takeaway"><ArrowDownRight size={18} /><p>{slide.takeaway}</p></div>
+            <div className={`takeaway${lastSlide ? " takeaway--quiz" : ""}`}><ArrowDownRight size={18} /><p>{slide.takeaway}</p>
+              {lastSlide && <div className="quiz-launch">
+                <span>15 questions</span>
+                <button className="button button--primary" type="button" onClick={() => setPanel("quiz")}><ClipboardList size={17} /> Start Quiz</button>
+              </div>}
+            </div>
           </div>}
         </SlideStage>
       </section>
@@ -151,7 +159,7 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
           <div className="deck-progress"><div><span>Slide <b>{slideNumber(index)}</b> of {slides.length}</span><span>{duration(slide.seconds)}</span></div><progress max={slides.length} value={index + 1} aria-label="Presentation progress" /></div>
           <button className="button button--primary" type="button" aria-label="Next slide" title="Next slide (→)" disabled={index === slides.length - 1} onClick={() => navigate(index + 1)}><ChevronRight size={20} /></button>
         </div>
-        <div className="next-slide"><span className="eyebrow">{index < slides.length - 1 ? slides[index + 1].presenter === slide.presenter ? "Up next" : `Handoff · ${presenters[slides[index + 1].presenter].name}` : "End of presentation"}</span><strong>{slides[index + 1]?.title ?? "Questions & discussion"}</strong></div>
+        <div className="next-slide"><span className="eyebrow">{index < slides.length - 1 ? slides[index + 1].presenter === slide.presenter ? "Up next" : `Handoff · ${presenters[slides[index + 1].presenter].name}` : "End of presentation"}</span><strong>{slides[index + 1]?.title ?? "Graph quiz"}</strong></div>
       </div>
     </main>
     <Modal open={panel === "overview"} onClose={() => setPanel(current => current === "overview" ? null : current)} label="Slide overview" variant="overview">
@@ -159,6 +167,9 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
     </Modal>
     <Modal open={panel === "notes"} onClose={() => setPanel(current => current === "notes" ? null : current)} label="Speaker notes" variant="notes">
       <SpeakerNotes index={index} /><div className="notes-footer"><NotesLink /></div>
+    </Modal>
+    <Modal open={panel === "quiz"} onClose={() => setPanel(current => current === "quiz" ? null : current)} label="Graph quiz" variant="quiz">
+      {panel === "quiz" && <DeckQuiz questions={quizQuestions} onClose={() => setPanel(null)} />}
     </Modal>
   </div>;
 }

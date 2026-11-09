@@ -16,6 +16,8 @@ npm start
 
 Open [the deck](http://localhost:3000/). The production server serves the deck and Socket.IO on port 3000. Run `npm run dev` for a development server with live code updates. Use `PORT` to select another port.
 
+When rebuilding, stop the production server with **Ctrl+C** before running `npm run build`, then run `npm start`. The running server indexes its build files at startup, so replacing them in place can cause missing styles and scripts.
+
 | Key | Action |
 | --- | --- |
 | Left / right arrows | Previous / next slide |

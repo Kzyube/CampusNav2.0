@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrthographicCamera } from "@react-three/drei";
-import { MathUtils, Quaternion, Vector3, type Group, type Mesh, type OrthographicCamera as ThreeCamera } from "three";
+import { MathUtils, Quaternion, Vector3, type Group, type OrthographicCamera as ThreeCamera } from "three";
 import { edges, vertices } from "@/lib/graph";
 import type { SculptureKind } from "./slide-sculpture";
 
@@ -45,29 +45,6 @@ function Plinth({ width, color }: { width: number; color: string }) {
   return <>
     <Block at={[0, -.83, 0]} size={[width + .13, .12, 2.13]} color="#305449" />
     <Block at={[0, -.7, 0]} size={[width, .16, 2]} color={color} />
-  </>;
-}
-
-const path: Point[] = [[-1.26, -.42, .54], [-.63, -.42, -.32], [.22, -.42, .13], [1.31, -.42, -.52]];
-const constellation: Point[] = [[-1.28, -.42, .57], [-1, -.42, -.48], [-.19, -.42, .49], [.29, -.42, -.4], [1.02, -.42, .59], [1.37, -.42, -.26]];
-
-function Wayfinder({ rider }: { rider: React.RefObject<Mesh | null> }) {
-  return <>
-    <group position={[-2.35, 0, 0]} rotation={[0, -.16, 0]}>
-      <Plinth width={3.4} color="#5a8164" />
-      {path.slice(1).map((point, i) => <Rod key={i} from={path[i]} to={point} color={lime} radius={.07} />)}
-      <Gem at={[-1.26, -.17, .54]} color={gold} size={.29} />
-      <Gem at={[1.31, -.17, -.52]} color={lime} size={.32} />
-      <mesh ref={rider}><sphereGeometry args={[.13, 12, 8]} /><meshStandardMaterial color="#f8ffdf" emissive={lime} emissiveIntensity={.6} /></mesh>
-    </group>
-    <group position={[2.35, 0, 0]} rotation={[0, .15, 0]}>
-      <Plinth width={3.4} color="#4c7770" />
-      {edges.map(({ id, from, to }) => <Rod key={id} from={constellation[vertices.indexOf(from)]} to={constellation[vertices.indexOf(to)]} color={mint} />)}
-      {constellation.map(([x, , z], i) => <group key={i} position={[x, -.32, z]}>
-        <Block at={[0, 0, 0]} size={[.29, .54 + (i % 3) * .18, .29]} color={i % 2 ? sky : mint} />
-        <Block at={[0, .3 + (i % 3) * .09, 0]} size={[.35, .06, .35]} color="#ecfff4" />
-      </group>)}
-    </group>
   </>;
 }
 
@@ -130,7 +107,7 @@ function Finale({ orbit }: { orbit: React.RefObject<Group | null> }) {
 }
 
 const framing: Record<SculptureKind, [width: number, height: number]> = {
-  wayfinder: [9.1, 2.95], traversal: [9.5, 3.05], graph: [4.35, 3.5], finale: [4.45, 3.35],
+  traversal: [9.5, 3.05], graph: [4.35, 3.5], finale: [4.45, 3.35],
 };
 
 function SculptureCamera({ kind }: { kind: SculptureKind }) {
@@ -149,7 +126,6 @@ function Sculpture({ kind, reduced }: { kind: SculptureKind; reduced: boolean })
   const orbit = useRef<Group>(null);
   const queue = useRef<Group>(null);
   const stack = useRef<Group>(null);
-  const rider = useRef<Mesh>(null);
   const elapsed = useRef(0);
   const visible = useRef(false);
   const { gl, invalidate } = useThree();
@@ -178,13 +154,6 @@ function Sculpture({ kind, reduced }: { kind: SculptureKind; reduced: boolean })
       root.current.scale.setScalar(.88 + .12 * settle);
       root.current.rotation.y = reduced ? 0 : Math.sin(cycle) * .13 - (1 - settle) * .28;
     }
-    if (rider.current) {
-      const progress = reduced ? .6 : (1 - Math.cos(cycle)) / 2;
-      const position = Math.min(2.999, progress * 3);
-      const i = Math.floor(position);
-      const f = position - i;
-      rider.current.position.set(MathUtils.lerp(path[i][0], path[i + 1][0], f), -.3, MathUtils.lerp(path[i][2], path[i + 1][2], f));
-    }
     queue.current?.children.forEach((tile, i) => {
       const enter = reduced ? 1 : MathUtils.smoothstep(time, .28 + i * .22, 1.13 + i * .22);
       const glide = reduced ? 0 : Math.sin(cycle * 2) * .24;
@@ -205,7 +174,6 @@ function Sculpture({ kind, reduced }: { kind: SculptureKind; reduced: boolean })
   });
 
   return <group ref={root}>
-    {kind === "wayfinder" && <Wayfinder rider={rider} />}
     {kind === "traversal" && <Traversal queue={queue} stack={stack} />}
     {kind === "graph" && <GraphSculpture orbit={orbit} />}
     {kind === "finale" && <Finale orbit={orbit} />}

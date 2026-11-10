@@ -17,6 +17,7 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
   let remaining = roundDuration;
   let endsAt: number | null = null;
   let timeout: ReturnType<typeof setTimeout> | undefined;
+  let pendingBroadcast: ReturnType<typeof setTimeout> | undefined;
 
   function clearTimer() {
     clearTimeout(timeout);
@@ -63,9 +64,15 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
   }
 
   function broadcast() {
+    clearTimeout(pendingBroadcast);
+    pendingBroadcast = undefined;
     io.emit("round", round());
     io.to("presenters").emit("participants", roster());
-    io.to("presenters").emit("games", results);
+  }
+
+  function scheduleBroadcast() {
+    // Batch roster and count changes when a class joins or submits together.
+    pendingBroadcast ??= setTimeout(broadcast, 75);
   }
 
   function reset() {
@@ -114,7 +121,7 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
       socket.data.token = token;
       participants.get(token)!.sockets.add(socket.id);
       socket.emit("self", selfFor(token));
-      broadcast();
+      scheduleBroadcast();
     }
 
     socket.on("student:restore", (token, ack) => {
@@ -162,7 +169,7 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
         order: ++submissionOrder,
       };
       io.to([...participant.sockets]).emit("self", selfFor(socket.data.token));
-      broadcast();
+      scheduleBroadcast();
       ack({ ok: true, value: undefined });
     });
 
@@ -177,8 +184,12 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
       }
       socket.data.presenter = true;
       await socket.join("presenters");
-      expire();
-      broadcast();
+      if (expire()) broadcast();
+      else {
+        socket.emit("round", round());
+        socket.emit("participants", roster());
+      }
+      socket.emit("games", results);
       ack({ ok: true, value: undefined });
     });
 
@@ -249,16 +260,20 @@ export function registerActivity(io: ActivityServer, presenterKey: string, allow
           return fail(ack, "Unknown presenter action.");
       }
       broadcast();
+      if (action === "reset-game" || action === "reveal") io.to("presenters").emit("games", results);
       if (action === "reset" || action === "reveal") syncStudents();
       ack({ ok: true, value: undefined });
     });
 
     socket.on("disconnect", () => {
       detach();
-      expire();
-      broadcast();
+      if (expire()) broadcast();
+      else scheduleBroadcast();
     });
   });
 
-  return clearTimer;
+  return () => {
+    clearTimer();
+    clearTimeout(pendingBroadcast);
+  };
 }

@@ -53,7 +53,7 @@ export function Presentation({ initialIndex }: { initialIndex: number }) {
   const frame = useRef<HTMLDivElement>(null);
   const slide = slides[index];
   const lastSlide = index === slides.length - 1;
-  const mood = slide.layout === "problem" ? "lost" : slide.layout === "solution" ? "learning" : null;
+  const mood = slide.layout === "solution" ? "learning" : null;
   const presenter = presenters[slide.presenter];
   const startsSection = index === 0 || slides[index - 1].presenter !== slide.presenter;
   const reduced = Boolean(useReducedMotion());

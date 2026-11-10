@@ -14,6 +14,7 @@ import { TraceLab } from "./trace-lab";
 import { StudentArt } from "./student-doodle";
 import { SlideSculpture } from "./slide-sculpture";
 import { QuestionSlide } from "./question-slide";
+import { RouteVote } from "./route-vote";
 import { ScrollLesson } from "./scroll-lesson";
 
 const mst = kruskal();
@@ -28,16 +29,6 @@ for (const step of bfs().steps) {
 
 function MapKey({ entries }: { entries: [string, string][] }) {
   return <dl className="map-key">{entries.map(([term, detail]) => <div key={term}><dt>{term}</dt><dd>{detail}</dd></div>)}</dl>;
-}
-
-function Problem() {
-  return <div className="problem-layout">
-    <SlideSculpture kind="wayfinder" />
-    <div className="problem-lanes">
-      <article><span className="eyebrow"><Navigation size={17} /> Wayfinding</span><h3>A route for one student</h3><p>From Administration to the Student Center, with the smallest total walking distance.</p><div className="route-strip"><b>A</b><span /><ArrowRight size={23} /><b>F</b></div></article>
-      <article><span className="eyebrow"><Cable size={17} /> Infrastructure</span><h3>A network for six buildings</h3><p>Connect the entire campus with the smallest total conduit cost.</p><div className="route-strip route-strip--many">{vertices.map(id => <b key={id}>{id}</b>)}</div></article>
-    </div>
-  </div>;
 }
 
 const terms: { label: string; text: string; state: GraphState }[] = [
@@ -184,7 +175,7 @@ function Technology() {
 export function SlideBody({ layout, emblem, presenter }: { layout: Layout; emblem?: ReactNode; presenter?: number }) {
   switch (layout) {
     case "question": return <QuestionSlide presenter={presenter!} />;
-    case "problem": return <Problem />;
+    case "problem": return <RouteVote />;
     case "solution": return <div className="content-split content-split--sidebar"><MapKey entries={[["Buildings", "Six vertices identify campus destinations."], ["Walkways", "Ten undirected edges connect them."], ["Weights", "A number measures distance or installation cost."]]} /><CampusVisual initialMode="3D" graph={false} graphTour inspect title="Campus model / Graph overlay" /></div>;
     case "terms": return <Terminology />;
     case "storage": return <Storage />;

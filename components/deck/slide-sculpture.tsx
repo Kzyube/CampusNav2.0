@@ -3,12 +3,12 @@
 import { Component, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "framer-motion";
-import { Award, GitFork, Layers3, Waypoints } from "lucide-react";
+import { Award, Layers3, Waypoints } from "lucide-react";
 
-export type SculptureKind = "wayfinder" | "traversal" | "graph" | "finale";
+export type SculptureKind = "traversal" | "graph" | "finale";
 
 const SculptureCanvas = dynamic(() => import("./slide-sculpture-canvas"), { ssr: false });
-const symbols = { wayfinder: GitFork, traversal: Layers3, graph: Waypoints, finale: Award };
+const symbols = { traversal: Layers3, graph: Waypoints, finale: Award };
 
 class SculptureBoundary extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
   state = { failed: false };

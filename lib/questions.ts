@@ -9,10 +9,10 @@ export const questionGroups = [
 type QuestionSet = { questions: [string, string]; tagalogQuestions: [string, string]; answers: [string, string]; tagalogAnswers: [string, string] };
 export const questionSets: QuestionSet[] = [
   {
-    questions: ["How is finding one walking route different from connecting every building?", "In the CampusNav graph, what do the buildings, walkways, and numbers represent?"],
-    tagalogQuestions: ["Paano naiiba ang paghahanap ng isang ruta sa pagkonekta sa lahat ng gusali?", "Sa CampusNav graph, ano ang kinakatawan ng mga gusali, daanan, at numero?"],
-    answers: ["A walking route minimizes distance along one path; a network connects all buildings while minimizing the total cost of its chosen links.", "Buildings are vertices, walkways are edges, and numbers are weights: distance for walking or cost for infrastructure."],
-    tagalogAnswers: ["Sa ruta, distansya ng isang daan ang pinapaliit. Sa network, kailangang konektado ang lahat ng gusali at mababa ang kabuuang gastos ng mga napiling koneksyon.", "Ang mga gusali ay vertices, ang mga daanan ay edges, at ang mga numero ay weights: distansya sa paglalakad o gastos sa paglalagay ng koneksyon."],
+    questions: ["Can a route with more walkways still be shorter? How would you check?", "In the CampusNav graph, what do the buildings, walkways, and numbers represent?"],
+    tagalogQuestions: ["Puwede bang mas maikli ang ruta kahit mas maraming daanan? Paano mo malalaman?", "Sa CampusNav graph, ano ang kinakatawan ng mga gusali, daanan, at numero?"],
+    answers: ["Yes. Add the distances along each route and compare the totals. The route with the smaller total is shorter.", "Buildings are vertices, walkways are edges, and numbers are weights: distance for walking or cost for infrastructure."],
+    tagalogAnswers: ["Oo. I-add ang distansya ng bawat daanan sa ruta at ikumpara ang totals. Mas maikli ang rutang may mas mababang total.", "Ang mga gusali ay vertices, ang mga daanan ay edges, at ang mga numero ay weights: distansya sa paglalakad o gastos sa paglalagay ng koneksyon."],
   },
   {
     questions: ["Building B has four walkways. What is its degree, and why?", "How would you find the B–C connection in a matrix and in an adjacency list?"],
